@@ -10,7 +10,8 @@ This repository contains a minimal TypeScript web app and Cocogitto-based releas
 ## Run the app
 
 1. `npm run build`
-2. Open `dist/index.html` in a browser.
+2. `npm run serve`
+3. Open the local URL printed in the terminal (usually `http://localhost:3000`).
 
 ## Run end-to-end smoke test
 
