@@ -1,0 +1,13 @@
+from_latest_tag = true
+ignore_merge_commits = true
+branch_whitelist = ["main"]
+tag_prefix = "v"
+
+[changelog]
+path = "CHANGELOG.md"
+
+[git_hooks.commit-msg]
+script = """#!/bin/sh
+set -e
+cog verify --file $1
+"""
