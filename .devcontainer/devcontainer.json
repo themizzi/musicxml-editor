@@ -1,0 +1,8 @@
+{
+  "name": "Debian Dev",
+  "dockerFile": "Dockerfile",
+  "mounts": [
+    "source=${localWorkspaceFolder}/.opencode,target=/home/dev/.local/share/opencode,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.local/share/opencode/auth.json,target=/tmp/opencode-auth.json,type=bind,consistency=cached"
+  ]
+}
