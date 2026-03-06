@@ -1,0 +1,50 @@
+name: PR Tests
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build CI container image
+        run: >-
+          docker build
+          --file .devcontainer/Dockerfile
+          --build-arg TARGETARCH=amd64
+          --tag musicxml-editor-ci:pr
+          .
+
+      - name: Run end-to-end tests in container
+        run: |
+          set -euo pipefail
+          workspace_path="${HOST_WORKSPACE:-${{ github.workspace }}}"
+          workspace_uid="$(stat -c '%u' "${workspace_path}")"
+          workspace_gid="$(stat -c '%g' "${workspace_path}")"
+
+          docker run \
+            --rm \
+            --shm-size=2g \
+            --user "${workspace_uid}:${workspace_gid}" \
+            --env HOME=/tmp/home \
+            --env npm_config_cache=/tmp/.npm \
+            --volume "${workspace_path}:/workspaces/musicxml-editor" \
+            --workdir /workspaces/musicxml-editor \
+            musicxml-editor-ci:pr \
+            bash -lc 'mkdir -p "$HOME" "$npm_config_cache" && node --version && npm --version && which chromium && chromium --version && which chromedriver && chromedriver --version && npm ci && npm run test:e2e'
