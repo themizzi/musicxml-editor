@@ -1,0 +1,23 @@
+{
+  "name": "musicxml-editor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:app && npm run build:static",
+    "build:app": "tsc -p tsconfig.json",
+    "build:static": "node ./scripts/build-static.mjs",
+    "test:e2e": "npm run build && TS_NODE_PROJECT=features/tsconfig.json wdio run ./wdio.conf.ts"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^12.7.0",
+    "@types/node": "^25.3.5",
+    "@wdio/cli": "^9.24.0",
+    "@wdio/cucumber-framework": "^9.24.0",
+    "@wdio/globals": "^9.23.0",
+    "@wdio/local-runner": "^9.24.0",
+    "@wdio/spec-reporter": "^9.24.0",
+    "@wdio/types": "^9.24.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

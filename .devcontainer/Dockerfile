@@ -11,9 +11,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         bash \
         ca-certificates \
+        chromium \
+        chromium-driver \
         curl \
+        fonts-liberation \
         git \
         jq \
+        nodejs \
+        npm \
         sudo \
         tar \
     && rm -rf /var/lib/apt/lists/* \

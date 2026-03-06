@@ -1,10 +1,20 @@
 # MusicXML Editor
 
-This repository contains a minimal static web app and Cocogitto-based release tooling.
+This repository contains a minimal TypeScript web app and Cocogitto-based release tooling.
+
+## App structure
+
+- Source files: `src/index.html`, `src/styles.css`, `src/app.ts`
+- Build output: `dist/`
 
 ## Run the app
 
-Open `index.html` in a browser.
+1. `npm run build`
+2. Open `dist/index.html` in a browser.
+
+## Run end-to-end smoke test
+
+`npm run test:e2e`
 
 ## Conventional commits
 
