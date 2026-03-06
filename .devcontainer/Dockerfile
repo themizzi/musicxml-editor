@@ -14,6 +14,7 @@ RUN apt-get update \
         chromium \
         chromium-driver \
         curl \
+        docker-cli \
         fonts-liberation \
         git \
         jq \
@@ -23,11 +24,15 @@ RUN apt-get update \
         tar \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid "${USER_GID}" "${USERNAME}" \
+    && groupadd -f docker \
     && useradd --uid "${USER_UID}" --gid "${USER_GID}" -m -s /bin/bash "${USERNAME}" \
+    && usermod -aG docker "${USERNAME}" \
     && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
     && chmod 0440 "/etc/sudoers.d/${USERNAME}" \
     && install -d -m 0755 -o "${USERNAME}" -g "${USERNAME}" "/home/${USERNAME}/.local" \
     && su - "${USERNAME}" -c 'curl -fsSL https://opencode.ai/install | bash'
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
 
 ARG TARGETARCH
 ARG COG_VERSION=7.0.0
