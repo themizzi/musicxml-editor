@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Mini MusicXML Editor Tests</title>
+
+    <style>
+      body {
+        font: 16px system-ui;
+        max-width: 1000px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+
+      #results > div {
+        margin: 0.4rem 0;
+      }
+
+      .fail {
+        color: #b00020;
+      }
+
+      iframe {
+        width: 100%;
+        height: 720px;
+        border: 1px solid #ccc;
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Tests</h1>
+    <div id="results"></div>
+
+    <iframe id="app-frame" src="./index.html"></iframe>
+
+    <script>
+      function assert(condition, message) {
+        if (!condition) {
+          throw new Error(message);
+        }
+      }
+
+      function assertEqual(actual, expected, message) {
+        if (actual !== expected) {
+          throw new Error(
+            `${message} (expected: "${expected}", actual: "${actual}")`
+          );
+        }
+      }
+
+      function addResult(text, failed = false) {
+        const row = document.createElement("div");
+        row.textContent = text;
+
+        if (failed) {
+          row.className = "fail";
+        }
+
+        document.getElementById("results").appendChild(row);
+      }
+
+      async function runTest(name, testFunction) {
+        try {
+          await testFunction();
+          addResult(`PASS: ${name}`);
+        } catch (error) {
+          addResult(`FAIL: ${name} — ${error.message}`, true);
+        }
+      }
+
+      function waitForFrameLoad(frameElement) {
+        return new Promise((resolve) => {
+          frameElement.addEventListener("load", () => resolve(), { once: true });
+        });
+      }
+
+      function nextTick() {
+        return new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      function waitFor(condition, { timeout = 5000, interval = 25 } = {}) {
+        return new Promise((resolve, reject) => {
+          const start = Date.now();
+
+          function check() {
+            try {
+              if (condition()) {
+                resolve();
+                return;
+              }
+            } catch (error) {
+            }
+
+            if (Date.now() - start >= timeout) {
+              reject(new Error("timed out waiting"));
+              return;
+            }
+
+            setTimeout(check, interval);
+          }
+
+          check();
+        });
+      }
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        const frameElement = document.getElementById("app-frame");
+        await waitForFrameLoad(frameElement);
+
+        const appWindow = frameElement.contentWindow;
+        const appDocument = frameElement.contentDocument;
+
+        await waitFor(() => appWindow && appWindow.musicXmlEditorApp);
+        await waitFor(() => appDocument && appDocument.getElementById("editor"));
+
+        await runTest("editor exists", () => {
+          assert(appDocument.getElementById("editor"), "missing #editor");
+        });
+
+        await runTest("preview exists", () => {
+          assert(appDocument.getElementById("preview"), "missing #preview");
+        });
+
+        await runTest("status exists", () => {
+          assert(appDocument.getElementById("status"), "missing #status");
+        });
+
+        await runTest("ok template exists", () => {
+          assert(appDocument.getElementById("ok-template"), "missing ok template");
+        });
+
+        await runTest("error template exists", () => {
+          assert(
+            appDocument.getElementById("error-template"),
+            "missing error template"
+          );
+        });
+
+        await runTest("app API is exposed", () => {
+          assert(appWindow.musicXmlEditorApp, "missing window.musicXmlEditorApp");
+        });
+
+        await runTest("invalid xml shows mark in status", async () => {
+          const editorElement = appDocument.getElementById("editor");
+          const statusElement = appDocument.getElementById("status");
+
+          editorElement.value = "<score-partwise><broken>";
+          editorElement.dispatchEvent(
+            new appWindow.Event("input", { bubbles: true })
+          );
+
+          await nextTick();
+
+          const markElement = statusElement.querySelector("mark");
+          assert(markElement, "expected <mark> in status");
+        });
+
+        await runTest("valid xml removes mark from status", async () => {
+          const editorElement = appDocument.getElementById("editor");
+          const statusElement = appDocument.getElementById("status");
+
+          editorElement.value = `<?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <work>
+    <work-title>Test</work-title>
+  </work>
+  <part-list>
+    <score-part id="P1">
+      <part-name>Piano</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise>`;
+
+          editorElement.dispatchEvent(
+            new appWindow.Event("input", { bubbles: true })
+          );
+
+          await waitFor(
+            () =>
+              !statusElement.querySelector("mark") &&
+              statusElement.textContent.trim() === "Valid MusicXML"
+          );
+
+          assert(!statusElement.querySelector("mark"), "did not expect <mark>");
+          assertEqual(
+            statusElement.textContent.trim(),
+            "Valid MusicXML",
+            "wrong success text"
+          );
+        });
+      });
+    </script>
+  </body>
+</html>

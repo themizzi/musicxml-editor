@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Mini MusicXML Editor</title>
+
+    <script
+      src="https://www.verovio.org/javascript/latest/verovio-toolkit-wasm.js"
+      defer
+    ></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        font: 16px system-ui;
+        margin: 0 auto;
+        padding: 24px 16px;
+        box-sizing: border-box;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        flex: 1;
+        min-height: 0;
+      }
+
+      textarea {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        box-sizing: border-box;
+        resize: none;
+      }
+
+      #preview {
+        border: 1px solid #ddd;
+        padding: 12px;
+        overflow: auto;
+        min-height: 0;
+        background: #fff;
+      }
+
+      @media (max-width: 900px) {
+        body {
+          min-height: auto;
+          display: block;
+        }
+
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        textarea {
+          height: 70vh;
+        }
+
+        #preview {
+          min-height: 70vh;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Mini MusicXML Editor</h1>
+
+    <div id="status"></div>
+
+    <template id="ok-template">
+      <span>Valid MusicXML</span>
+    </template>
+
+    <template id="error-template">
+      <mark></mark>
+    </template>
+
+    <main>
+      <textarea id="editor" spellcheck="false"><?xml version="1.0" encoding="UTF-8"?>
+<score-partwise version="4.0">
+  <work>
+    <work-title>New Score</work-title>
+  </work>
+  <part-list>
+    <score-part id="P1">
+      <part-name>Piano</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>4</duration>
+        <type>whole</type>
+      </note>
+    </measure>
+  </part>
+</score-partwise></textarea>
+
+      <div id="preview"></div>
+    </main>
+
+    <script>
+      (() => {
+        let verovioToolkit = null;
+
+        function showStatus(templateElement, data = {}) {
+          const statusElement = document.getElementById("status");
+          const fragment = templateElement.content.cloneNode(true);
+
+          if (data.errorMessage) {
+            const markElement = fragment.querySelector("mark");
+            if (markElement) {
+              markElement.textContent = data.errorMessage;
+            }
+          }
+
+          statusElement.replaceChildren(fragment);
+        }
+
+        function getXmlParseError(xmlText) {
+          const xmlDocument = new DOMParser().parseFromString(
+            xmlText,
+            "application/xml"
+          );
+
+          const parserErrors = xmlDocument.getElementsByTagName("parsererror");
+          if (parserErrors.length > 0) {
+            return parserErrors[0].textContent.trim();
+          }
+
+          if (xmlDocument.documentElement?.nodeName === "parsererror") {
+            return xmlDocument.documentElement.textContent.trim();
+          }
+
+          return null;
+        }
+
+        function renderPreview() {
+          const editorElement = document.getElementById("editor");
+          const previewElement = document.getElementById("preview");
+          const okTemplateElement = document.getElementById("ok-template");
+          const errorTemplateElement = document.getElementById("error-template");
+
+          if (
+            !editorElement ||
+            !previewElement ||
+            !okTemplateElement ||
+            !errorTemplateElement
+          ) {
+            return;
+          }
+
+          const parseErrorMessage = getXmlParseError(editorElement.value);
+
+          if (parseErrorMessage) {
+            previewElement.replaceChildren();
+            showStatus(errorTemplateElement, {
+              errorMessage: parseErrorMessage
+            });
+            return;
+          }
+
+          if (!verovioToolkit) {
+            return;
+          }
+
+          try {
+            verovioToolkit.setOptions({
+              inputFrom: "xml",
+              pageWidth: 1400,
+              scale: 42,
+              footer: "none",
+              header: "none"
+            });
+
+            verovioToolkit.loadData(editorElement.value);
+
+            const pageCount = verovioToolkit.getPageCount();
+            previewElement.innerHTML = Array.from(
+              { length: pageCount },
+              (_, pageIndex) => verovioToolkit.renderToSVG(pageIndex + 1, {})
+            ).join("");
+
+            showStatus(okTemplateElement);
+          } catch (error) {
+            previewElement.replaceChildren();
+            showStatus(errorTemplateElement, {
+              errorMessage: error.message
+            });
+          }
+        }
+
+        function startApp() {
+          const editorElement = document.getElementById("editor");
+          const errorTemplateElement = document.getElementById("error-template");
+
+          if (!editorElement) {
+            return;
+          }
+
+          editorElement.addEventListener("input", renderPreview);
+
+          if (!window.verovio || !window.verovio.module) {
+            if (errorTemplateElement) {
+              showStatus(errorTemplateElement, {
+                errorMessage: "Verovio failed to load"
+              });
+            }
+            return;
+          }
+
+          window.verovio.module.onRuntimeInitialized = () => {
+            verovioToolkit = new window.verovio.toolkit();
+            renderPreview();
+          };
+        }
+
+        window.musicXmlEditorApp = {
+          getXmlParseError,
+          renderPreview,
+          startApp
+        };
+
+        document.addEventListener("DOMContentLoaded", startApp);
+      })();
+    </script>
+  </body>
+</html>
