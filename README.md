@@ -1,64 +1,36 @@
-# MusicXML Editor
+# Mini MusicXML Editor
 
-This repository contains a minimal TypeScript web app and Cocogitto-based release tooling.
+A lightweight, browser-based MusicXML editor with real-time sheet music preview.
 
-## App structure
+## Live Demo
 
-- Source files: `src/index.html`, `src/styles.css`, `src/app.ts`
-- Build output: `dist/`
+[Open the editor](https://themizzi.github.io/musicxml-editor/)
 
-## Run the app
+## Features
 
-1. `npm run build`
-2. `npm run serve`
-3. Open the local URL printed in the terminal (usually `http://localhost:3000`).
+- **Real-time Preview** — See your sheet music update instantly as you type
+- **MusicXML Support** — Full support for MusicXML 4.0 format
+- **Validation** — Automatic XML syntax checking with error messages
+- **Responsive Design** — Works on desktop and mobile devices
+- **No Installation** — Runs entirely in your browser
 
-## Run end-to-end smoke test
+## How to Use
 
-`npm run test:e2e`
+1. Open the [editor](https://themizzi.github.io/musicxml-editor/)
+2. Edit the MusicXML on the left side
+3. View the rendered sheet music on the right side in real-time
+4. Valid MusicXML will display as sheet notation; errors will show in red
 
-## Conventional commits
+## Technology
 
-Use Conventional Commits so Cocogitto can validate commits and compute semantic version bumps.
+Built with:
+- [Verovio](https://www.verovio.org/) — Music notation rendering engine
+- Vanilla JavaScript (no frameworks or build tools)
 
-Examples:
+## Testing
 
-- `feat: add toolbar button`
-- `fix: correct status message wording`
-- `feat!: change editor initialization flow`
+View the [test suite](https://themizzi.github.io/musicxml-editor/test.html) to see automated tests validating the editor's core functionality.
 
-## Commit enforcement
+## License
 
-`cog.toml` defines a `commit-msg` hook that runs:
-
-`cog verify --file $1`
-
-Install the hook with:
-
-`cog install-hook commit-msg`
-
-## Docker-based cocogitto installation
-
-`Dockerfile` installs `cog` from GitHub release binaries using architecture mapping and a pinned build argument:
-
-- `ARG COG_VERSION=6.2.1`
-- `ARG TARGETARCH` mapped to:
-  - `amd64` -> `x86_64`
-  - `arm64` -> `aarch64`
-
-The image resolves a Linux asset for the pinned version tag, installs `cog` to `/usr/local/bin/cog`, and verifies the installation with `cog --version` during build.
-
-## Release flow
-
-Run:
-
-1. `cog check --from-latest-tag`
-2. `cog bump --auto`
-3. `git push --follow-tags`
-
-`cog bump --auto` updates `CHANGELOG.md`, creates the bump commit, and creates the release tag.
-
-## Design choices
-
-- No `VERSION` file is used.
-- No app version is displayed in the UI by design.
+MIT
